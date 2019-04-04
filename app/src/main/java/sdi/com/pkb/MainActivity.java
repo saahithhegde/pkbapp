@@ -13,9 +13,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.Policy;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 
@@ -24,7 +27,6 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
-import com.amazonaws.regions.Region;
 import com.amazonaws.services.rekognition.AmazonRekognition;
 import com.amazonaws.services.rekognition.AmazonRekognitionClient;
 import com.amazonaws.services.rekognition.model.DetectTextRequest;
@@ -33,16 +35,19 @@ import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.S3Object;
 import com.amazonaws.services.rekognition.model.TextDetection;
 import com.amazonaws.services.s3.AmazonS3Client;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import sdi.com.pkb.preview.CameraPreviewer;
+import sdi.com.pkb.preview.RcBook;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 
 public class MainActivity extends AppCompatActivity {
     private Camera mCamera;
+    private RcBook mCurrentRcBook;
     private CameraPreviewer cameraPreviewer;
     private static final int MY_PERMISSIONS_WRITE_EXT_STORAGE = 1;
     private Camera.PictureCallback pictureCallback = (data, camera) -> {
@@ -92,16 +97,9 @@ public class MainActivity extends AppCompatActivity {
                                                 .withBucket("detect-userfiles-mobilehub-466049087")));
                         DetectTextResult result = rekognitionClient.detectText(request);
                         List<TextDetection> textDetections = result.getTextDetections();
-                        System.out.println("Detected lines and words for " + pictureFile);
-                        for (TextDetection text : textDetections) {
-
-                            System.out.println("Detected: " + text.getDetectedText());
-                            System.out.println("Confidence: " + text.getConfidence().toString());
-                            System.out.println("Id : " + text.getId());
-                            System.out.println("Parent Id: " + text.getParentId());
-                            System.out.println("Type: " + text.getType());
-                            System.out.println();
-                        }
+                        StringBuilder buffer = setupDatabaseAndModel(textDetections);
+                        mCurrentRcBook = performRegexOnString(buffer.toString());
+                        System.out.println(mCurrentRcBook);
                         if (TransferState.COMPLETED == uploadObserver.getState()) {
                             // Handle a completed upload.
                         }
@@ -123,6 +121,48 @@ public class MainActivity extends AppCompatActivity {
         });
 
     };
+
+    private RcBook performRegexOnString(String input) {
+        RcBook book = new RcBook();
+        Pattern pattern = Pattern.compile("([A-Z]{2}[0-9]{2}[A-Z][A-Z]? [0-9]{4})");//Registration match
+        Matcher matcher = pattern.matcher(input);
+        while (matcher.find())
+            book.setRegNo(matcher.group());
+        pattern = Pattern.compile("([A-Z0-9]{17})");// chassis number
+        matcher = pattern.matcher(input);
+        while (matcher.find())
+            book.setChassisNo(matcher.group());
+        pattern = pattern.compile("( [A-Z0-9]{14} )");
+        matcher = pattern.matcher(input);
+        while (matcher.find())
+            book.setEngineNo(matcher.group());
+        pattern = pattern.compile("MCYCLE|LMVCAR|HMV|HGMV");
+        matcher = pattern.matcher(input);
+        while (matcher.find())
+            book.setClassType(matcher.group());
+        pattern = pattern.compile("BLACK|WHITE|PURPLE|RED|GREEN|BLUE|YELLOW|SILVER|GREY");
+        matcher = pattern.matcher(input);
+        while (matcher.find())
+            book.setColor(matcher.group());
+        book.setOwnerName("XXXXXX");
+        pattern = pattern.compile("ADDRESS");
+        matcher = pattern.matcher(input);
+        while (matcher.find())
+            book.setOwnerAddress(input.substring(matcher.start())
+                .replace("\\|"," "));
+        return book;
+    }
+
+    private StringBuilder setupDatabaseAndModel(List<TextDetection> textDetections) {
+        StringBuilder builder = new StringBuilder();
+        for (TextDetection textDetection:textDetections){
+            if (textDetection.getType().equals("LINE")) {
+                builder.append(textDetection.getDetectedText());
+                builder.append("|");
+            }
+        }
+        return builder;
+    }
 
     private File getImageFile(int mediaTypeImage) {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
@@ -196,11 +236,3 @@ public class MainActivity extends AppCompatActivity {
 
 
 }
-
-
-// -------------------------This needs to be called to upload the file------------------------------------
-    // -----------------------------------  -----------------------------------------
-
-//
-//    // KEY and SECRET are gotten when we create an IAM user above
-//    //https://grokonez.com/android/uploaddownload-files-images-amazon-s3-android
