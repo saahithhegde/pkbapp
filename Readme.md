@@ -11,11 +11,8 @@ The text contains all the details present in the RC Card.
 ### 2. Stroing the Text:
 The text from the Text Recognition is stored in DB (Firebase Cloud Storage).
 
-### 3. Authentication Feature:
-Setting up authentication feature using Firebase Authentication feature.
-
-### 4. Storing the image:
-String the scanned image of RC Card in user's account so that he/she can check the previous scanned copies of RC Card.
+### 3. Validation of RC:
+The scanned RC is checked whether the scanned RC is valid or not.
 
 ## Dependencies Used:
 1. AWS SDK for Java: Included to link AWS with Android project.
