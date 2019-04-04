@@ -27,12 +27,6 @@ public class VehicleVerification extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Toast.makeText(this, "service started", Toast.LENGTH_SHORT).show();
-        try {
-            downloadUrl("https://google.com");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         return START_STICKY;
     }
 
@@ -42,7 +36,7 @@ public class VehicleVerification extends Service {
         Toast.makeText(this, "service stopped", Toast.LENGTH_SHORT).show();
     }
 
-    public String downloadUrl(String myurl) throws IOException {
+    private String downloadUrl(String myurl) throws IOException {
         InputStream inputStream = null;
         int len = 500;
 

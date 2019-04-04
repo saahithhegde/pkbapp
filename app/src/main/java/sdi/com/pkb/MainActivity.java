@@ -2,11 +2,13 @@ package sdi.com.pkb;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import java.io.File;
@@ -27,30 +29,27 @@ public class MainActivity extends Activity {
     private Camera mCamera;
     private CameraPreviewer cameraPreviewer;
     private static final int MY_PERMISSIONS_WRITE_EXT_STORAGE = 1;
-    private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
-        @Override
-        public void onPictureTaken(byte[] data, Camera camera) {
-            File pictureFile = getImageFile(MEDIA_TYPE_IMAGE);
-            if (pictureFile == null){
-                Log.d("Main activity", "Error creating media file, check storage permissions");
-                return;
-            }
-            try {
-                FileOutputStream fos = new FileOutputStream(pictureFile);
-                fos.write(data);
-                fos.close();
-            } catch (FileNotFoundException e) {
-                Log.d("Main activity", "File not found: " + e.getMessage());
-            } catch (IOException e) {
-                Log.d("Main activity", "Error accessing file: " + e.getMessage());
-            }
-
+    private Camera.PictureCallback pictureCallback = (data, camera) -> {
+        File pictureFile = getImageFile(MEDIA_TYPE_IMAGE);
+        if (pictureFile == null){
+            Log.d("Main activity", "Error creating media file, check storage permissions");
+            return;
         }
+        try {
+            FileOutputStream fos = new FileOutputStream(pictureFile);
+            fos.write(data);
+            fos.close();
+        } catch (FileNotFoundException e) {
+            Log.d("Main activity", "File not found: " + e.getMessage());
+        } catch (IOException e) {
+            Log.d("Main activity", "Error accessing file: " + e.getMessage());
+        }
+
     };
 
     private File getImageFile(int mediaTypeImage) {
         File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "MyCameraApp");
+                Environment.DIRECTORY_PICTURES), "PKB");
 
         if (!mediaStorageDir.exists()) {
             if (!mediaStorageDir.mkdirs()) {
@@ -69,7 +68,8 @@ public class MainActivity extends Activity {
         } else {
             return null;
         }
-
+        mCamera.stopPreview();
+        mCamera.startPreview();
         return mediaFile;
 
     }
@@ -103,6 +103,9 @@ public class MainActivity extends Activity {
         frameLayout.addView(cameraPreviewer);
         frameLayout.setOnClickListener((click) -> {
             mCamera.takePicture(null,null,pictureCallback);
+            startService(new Intent(getBaseContext(),VehicleVerification.class));
         });
     }
+
+
 }

@@ -23,18 +23,6 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>
 
-    <Button
-        android:id="@+id/test"
-        android:layout_height="match_parent"
-        android:layout_width="wrap_content"
-        android:onClick="method"
-        android:text="hello" />
 
-    <Button
-        android:id="@+id/test1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-    android:onClick="method2"
-    android:text="hello" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
