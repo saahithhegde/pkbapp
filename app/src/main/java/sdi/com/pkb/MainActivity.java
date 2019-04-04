@@ -35,6 +35,9 @@ import com.amazonaws.services.rekognition.model.Image;
 import com.amazonaws.services.rekognition.model.S3Object;
 import com.amazonaws.services.rekognition.model.TextDetection;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -46,6 +49,8 @@ import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 
 public class MainActivity extends AppCompatActivity {
+    private FirebaseDatabase database;
+    private DatabaseReference reference;
     private Camera mCamera;
     private RcBook mCurrentRcBook;
     private CameraPreviewer cameraPreviewer;
@@ -105,6 +110,12 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
                     recognition.start();
+                    try {
+                        recognition.join();
+                        reference.child(mCurrentRcBook.getRegNo()).setValue(mCurrentRcBook);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -124,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
 
     private RcBook performRegexOnString(String input) {
         RcBook book = new RcBook();
-        Pattern pattern = Pattern.compile("([A-Z]{2}[0-9]{2}[A-Z][A-Z]? [0-9]{4})");//Registration match
+        Pattern pattern = Pattern.compile("([A-Z]{2}[0-9]{2}[A-Z][A-Z]? ?[0-9]{4})");//Registration match
         Matcher matcher = pattern.matcher(input);
         while (matcher.find())
             book.setRegNo(matcher.group());
@@ -206,10 +217,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         AWSMobileClient.getInstance().initialize(this).execute();
-
-
+//        FirebaseApp.initializeApp(this);
+        database = FirebaseDatabase.getInstance();
+        reference = database.getReference("RC");
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
