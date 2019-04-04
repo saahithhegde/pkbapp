@@ -18,7 +18,7 @@
         android:layout_width="0dp"
         app:menu="@menu/nav_bottom_menu"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@+id/camera_preview"
+        app:layout_constraintBottom_toBottomOf="@+id/camera"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"/>
 
