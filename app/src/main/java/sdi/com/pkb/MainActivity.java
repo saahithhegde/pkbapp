@@ -1,19 +1,13 @@
 package sdi.com.pkb;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.AppComponentFactory;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
-//import android.support.v4.app.ActivityCompat;
-//import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.View;
 import android.widget.FrameLayout;
-//import android.support.v7.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import com.amazonaws.mobile.client.AWSMobileClient;
 
@@ -29,10 +24,15 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.regions.Region;
+import com.amazonaws.services.rekognition.AmazonRekognition;
+import com.amazonaws.services.rekognition.AmazonRekognitionClient;
+import com.amazonaws.services.rekognition.model.DetectTextRequest;
+import com.amazonaws.services.rekognition.model.DetectTextResult;
+import com.amazonaws.services.rekognition.model.Image;
+import com.amazonaws.services.rekognition.model.S3Object;
+import com.amazonaws.services.rekognition.model.TextDetection;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.util.IOUtils;
-
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int MY_PERMISSIONS_WRITE_EXT_STORAGE = 1;
     private Camera.PictureCallback pictureCallback = (data, camera) -> {
         File pictureFile = getImageFile(MEDIA_TYPE_IMAGE);
-        if (pictureFile == null){
+        if (pictureFile == null) {
             Log.d("Main activity", "Error creating media file, check storage permissions");
             return;
         }
@@ -60,6 +60,67 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.d("Main activity", "Error accessing file: " + e.getMessage());
         }
+        BasicAWSCredentials credentials = new BasicAWSCredentials("AKIAXIPWIYJHPHCDF6HN",
+                "DsEi3Xjg9bWucMVzXYRLJ9gEKba/0Y6KsAGoE5W3");
+        AmazonS3Client s3Client = new AmazonS3Client(credentials);
+
+        TransferUtility transferUtility =
+                TransferUtility.builder()
+                        .context(getApplicationContext())
+                        .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
+                        .s3Client(s3Client)
+                        .build();
+
+        // "jsaS3" will be the folder that contains the file
+        TransferObserver uploadObserver =
+                transferUtility.upload(pictureFile.getName(), pictureFile);
+
+        uploadObserver.setTransferListener(new TransferListener() {
+
+            @Override
+            public void onStateChanged(int id, TransferState state) {
+                if (TransferState.COMPLETED == state) {
+                    Thread recognition = new Thread(()->{
+                        AmazonRekognition rekognitionClient = new AmazonRekognitionClient(credentials);
+                        rekognitionClient.setEndpoint("https://rekognition.us-east-2.amazonaws.com");
+                        System.out.println(pictureFile.getName());
+                        ((AmazonRekognitionClient) rekognitionClient).setSignerRegionOverride("us-east-2");
+                        DetectTextRequest request = new DetectTextRequest()
+                                .withImage(new Image()
+                                        .withS3Object(new S3Object()
+                                                .withName(pictureFile.getName())
+                                                .withBucket("detect-userfiles-mobilehub-466049087")));
+                        DetectTextResult result = rekognitionClient.detectText(request);
+                        List<TextDetection> textDetections = result.getTextDetections();
+                        System.out.println("Detected lines and words for " + pictureFile);
+                        for (TextDetection text : textDetections) {
+
+                            System.out.println("Detected: " + text.getDetectedText());
+                            System.out.println("Confidence: " + text.getConfidence().toString());
+                            System.out.println("Id : " + text.getId());
+                            System.out.println("Parent Id: " + text.getParentId());
+                            System.out.println("Type: " + text.getType());
+                            System.out.println();
+                        }
+                        if (TransferState.COMPLETED == uploadObserver.getState()) {
+                            // Handle a completed upload.
+                        }
+                    });
+                    recognition.start();
+                }
+            }
+
+            @Override
+            public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                float percentDonef = ((float) bytesCurrent / (float) bytesTotal) * 100;
+                int percentDone = (int) percentDonef;
+            }
+
+            @Override
+            public void onError(int id, Exception ex) {
+                // Handle errors
+            }
+        });
 
     };
 
@@ -118,11 +179,17 @@ public class MainActivity extends AppCompatActivity {
 
         }
         mCamera = getCameraInstance();
+        Camera.Parameters parameters = mCamera.getParameters();
+        parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+//        parameters.setRotation(90);
+        parameters.setZoom(30);
+        mCamera.setParameters(parameters);
         cameraPreviewer = new CameraPreviewer(this,mCamera);
         FrameLayout frameLayout = findViewById(R.id.camera);
         frameLayout.addView(cameraPreviewer);
         frameLayout.setOnClickListener((click) -> {
             mCamera.takePicture(null,null,pictureCallback);
+
             startService(new Intent(getBaseContext(),VehicleVerification.class));
         });
     }
@@ -137,44 +204,3 @@ public class MainActivity extends AppCompatActivity {
 //
 //    // KEY and SECRET are gotten when we create an IAM user above
 //    //https://grokonez.com/android/uploaddownload-files-images-amazon-s3-android
-//    BasicAWSCredentials credentials = new BasicAWSCredentials('AKIAXIPWIYJHPHCDF6HN','DsEi3Xjg9bWucMVzXYRLJ9gEKba/0Y6KsAGoE5W3');
-//    AmazonS3Client s3Client = new AmazonS3Client(credentials);
-//
-//    TransferUtility transferUtility =
-//            TransferUtility.builder()
-//                    .context(getApplicationContext())
-//                    .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
-//                    .s3Client(s3Client)
-//                    .build();
-//
-//    // "jsaS3" will be the folder that contains the file
-//    TransferObserver uploadObserver =
-//            transferUtility.upload("detectrc/" + fileName, file); //file gets uploaded here
-//
-//uploadObserver.setTransferListener(new TransferListener() {
-//
-//@Override
-//public void onStateChanged(int id, TransferState state) {
-//        if (TransferState.COMPLETED == state) {
-//        // Handle a completed download.
-//        }
-//        }
-//
-//@Override
-//public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
-//        float percentDonef = ((float)bytesCurrent/(float)bytesTotal) * 100;
-//        int percentDone = (int)percentDonef;
-//        }
-//
-//@Override
-//public void onError(int id, Exception ex) {
-//        // Handle errors
-//        }
-//
-//        });
-//
-//// If your upload does not trigger the onStateChanged method inside your
-//// TransferListener, you can directly check the transfer state as shown here.
-//        if (TransferState.COMPLETED == uploadObserver.getState()) {
-//        // Handle a completed upload.
-//        }
