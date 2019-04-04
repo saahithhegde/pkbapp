@@ -13,6 +13,7 @@ import java.io.IOException;
 public class CameraPreviewer extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mPreviewHolder;
     private Camera mCamera;
+
     public CameraPreviewer(Context context, Camera camera) {
         super(context);
         mCamera = camera;
@@ -24,6 +25,7 @@ public class CameraPreviewer extends SurfaceView implements SurfaceHolder.Callba
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         try {
+            mCamera.setDisplayOrientation(90);
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
         } catch (IOException e) {
@@ -37,10 +39,11 @@ public class CameraPreviewer extends SurfaceView implements SurfaceHolder.Callba
             return;
         try {
             mCamera.stopPreview();
-        } catch (Exception e){
+        } catch (Exception e) {
 
         }
         try {
+            mCamera.setDisplayOrientation(90);
             mCamera.setPreviewDisplay(holder);
             mCamera.startPreview();
         } catch (IOException e) {
@@ -50,6 +53,19 @@ public class CameraPreviewer extends SurfaceView implements SurfaceHolder.Callba
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        // Surface will be destroyed when we return, so stop the preview.
+        if (mCamera != null) {
+            // Call stopPreview() to stop updating the preview surface.
+            mCamera.stopPreview();
+        }
+    }
 
+    private void stopPreviewAndFreeCamera() {
+
+        if (mCamera != null) {
+            mCamera.stopPreview();
+            mCamera.release();
+            mCamera = null;
+        }
     }
 }
