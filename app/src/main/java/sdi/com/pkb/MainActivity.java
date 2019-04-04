@@ -2,14 +2,18 @@ package sdi.com.pkb;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AppComponentFactory;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Environment;
+//import android.support.v4.app.ActivityCompat;
+//import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
+//import android.support.v7.app.AppCompatActivity;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,6 +22,18 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.amazonaws.mobile.client.AWSMobileClient;
+
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.util.IOUtils;
+
+
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import sdi.com.pkb.preview.CameraPreviewer;
@@ -25,7 +41,7 @@ import sdi.com.pkb.preview.CameraPreviewer;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
     private Camera mCamera;
     private CameraPreviewer cameraPreviewer;
     private static final int MY_PERMISSIONS_WRITE_EXT_STORAGE = 1;
@@ -89,6 +105,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        AWSMobileClient.getInstance().initialize(this).execute();
+
+
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CALENDAR)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
@@ -109,3 +129,52 @@ public class MainActivity extends Activity {
 
 
 }
+
+
+// -------------------------This needs to be called to upload the file------------------------------------
+    // -----------------------------------  -----------------------------------------
+
+//
+//    // KEY and SECRET are gotten when we create an IAM user above
+//    //https://grokonez.com/android/uploaddownload-files-images-amazon-s3-android
+//    BasicAWSCredentials credentials = new BasicAWSCredentials('AKIAXIPWIYJHPHCDF6HN','DsEi3Xjg9bWucMVzXYRLJ9gEKba/0Y6KsAGoE5W3');
+//    AmazonS3Client s3Client = new AmazonS3Client(credentials);
+//
+//    TransferUtility transferUtility =
+//            TransferUtility.builder()
+//                    .context(getApplicationContext())
+//                    .awsConfiguration(AWSMobileClient.getInstance().getConfiguration())
+//                    .s3Client(s3Client)
+//                    .build();
+//
+//    // "jsaS3" will be the folder that contains the file
+//    TransferObserver uploadObserver =
+//            transferUtility.upload("detectrc/" + fileName, file); //file gets uploaded here
+//
+//uploadObserver.setTransferListener(new TransferListener() {
+//
+//@Override
+//public void onStateChanged(int id, TransferState state) {
+//        if (TransferState.COMPLETED == state) {
+//        // Handle a completed download.
+//        }
+//        }
+//
+//@Override
+//public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+//        float percentDonef = ((float)bytesCurrent/(float)bytesTotal) * 100;
+//        int percentDone = (int)percentDonef;
+//        }
+//
+//@Override
+//public void onError(int id, Exception ex) {
+//        // Handle errors
+//        }
+//
+//        });
+//
+//// If your upload does not trigger the onStateChanged method inside your
+//// TransferListener, you can directly check the transfer state as shown here.
+//        if (TransferState.COMPLETED == uploadObserver.getState()) {
+//        // Handle a completed upload.
+//        }
