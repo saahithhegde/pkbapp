@@ -42,8 +42,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.DialogFragment;
 import sdi.com.pkb.preview.CameraPreviewer;
 import sdi.com.pkb.preview.RcBook;
+import sdi.com.pkb.preview.ResultDialog;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO;
@@ -113,6 +115,15 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         recognition.join();
                         reference.child(mCurrentRcBook.getRegNo()).setValue(mCurrentRcBook);
+                        DialogFragment dialogFragment = new ResultDialog();
+                        Bundle b = new Bundle();
+                        b.putString("name",mCurrentRcBook.getOwnerName());
+                        b.putString("address",mCurrentRcBook.getOwnerAddress());
+                        b.putString("reg",mCurrentRcBook.getRegNo());
+                        b.putString("chassis",mCurrentRcBook.getChassisNo());
+                        b.putString("color",mCurrentRcBook.getColor());
+                        dialogFragment.setArguments(b);
+                        dialogFragment.show(getSupportFragmentManager(),"Result Dialog");
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
