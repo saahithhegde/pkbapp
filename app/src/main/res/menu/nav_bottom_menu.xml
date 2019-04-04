@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/scan"
+        android:enabled="true"
+        android:icon="@drawable/ic_search_white_24dp"
+        android:title="Scan"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/previous"
+        android:icon="@drawable/ic_view_list_white_24dp"
+        android:title="Previous"
+        app:showAsAction="always" />
+</menu>
