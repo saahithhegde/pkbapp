@@ -23,6 +23,15 @@ public class RcBook {
     private String mfgDate;
     private String regExpire;
     private String cc;
+    private String validation;
+
+    public String getValidation() {
+        return validation;
+    }
+
+    public void setValidation(String validation) {
+        this.validation = validation;
+    }
 
     public String getRegNo() {
         return regNo;

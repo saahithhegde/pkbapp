@@ -176,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
         while (matcher.find())
             book.setColor(matcher.group());
         book.setOwnerName("XXXXXX");
+        book.setValidation("false");
         pattern = pattern.compile("ADDRESS");
         matcher = pattern.matcher(input);
         while (matcher.find())
