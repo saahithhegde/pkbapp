@@ -34,11 +34,12 @@ dependencies {
     implementation 'com.amazonaws:aws-android-sdk-rekognition:2.+'
     implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.7@aar') { transitive = true }
     implementation 'com.amazonaws:aws-android-sdk-s3:2.6.+'
+    implementation 'com.loopj.android:android-async-http:1.4.9'
 //    implementation 'com.amazonaws:aws-android-sdk-cognito:2.6.+'
     implementation 'com.google.firebase:firebase-core:16.0.8'
     implementation 'com.google.firebase:firebase-database:16.1.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    }
+}
 apply plugin: 'com.google.gms.google-services'

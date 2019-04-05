@@ -2,6 +2,7 @@ package sdi.com.pkb.preview;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +13,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 import sdi.com.pkb.R;
+import sdi.com.pkb.ViolationActivity;
 
 /**
  * Created by Kartik on 05-Apr-19.
@@ -31,7 +33,9 @@ public class ResultDialog extends DialogFragment {
         View v = inflater.inflate(R.layout.result_dialog, null);
         builder.setView(v)
                 .setPositiveButton("Check Violations", (dialog, which) -> {
-
+                    Intent intent = new Intent(getContext(), ViolationActivity.class);
+                    intent.putExtra("regNo",(String)args.get("reg"));
+                    startActivity(intent);
                 })
                 .setNegativeButton("Dismiss",((dialog, which) -> {
 

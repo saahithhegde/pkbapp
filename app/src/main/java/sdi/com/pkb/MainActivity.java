@@ -1,6 +1,7 @@
 package sdi.com.pkb;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
@@ -8,12 +9,12 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.Policy;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private Camera mCamera;
     private RcBook mCurrentRcBook;
     private CameraPreviewer cameraPreviewer;
+    private ProgressDialog dialog;
     private static final int MY_PERMISSIONS_WRITE_EXT_STORAGE = 1;
     private Camera.PictureCallback pictureCallback = (data, camera) -> {
         File pictureFile = getImageFile(MEDIA_TYPE_IMAGE);
@@ -105,7 +107,11 @@ public class MainActivity extends AppCompatActivity {
                         DetectTextResult result = rekognitionClient.detectText(request);
                         List<TextDetection> textDetections = result.getTextDetections();
                         StringBuilder buffer = setupDatabaseAndModel(textDetections);
-                        mCurrentRcBook = performRegexOnString(buffer.toString());
+                        try {
+                            mCurrentRcBook = performRegexOnString(buffer.toString());
+                        } catch (NullPointerException e){
+                            Toast.makeText(MainActivity.this, "Detection failed", Toast.LENGTH_SHORT).show();
+                        }
                         System.out.println(mCurrentRcBook);
                         if (TransferState.COMPLETED == uploadObserver.getState()) {
                             // Handle a completed upload.
@@ -114,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
                     recognition.start();
                     try {
                         recognition.join();
+                        dialog.dismiss();
                         reference.child(mCurrentRcBook.getRegNo()).setValue(mCurrentRcBook);
                         DialogFragment dialogFragment = new ResultDialog();
                         Bundle b = new Bundle();
@@ -125,6 +132,8 @@ public class MainActivity extends AppCompatActivity {
                         dialogFragment.setArguments(b);
                         dialogFragment.show(getSupportFragmentManager(),"Result Dialog");
                     } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (NullPointerException e){
                         e.printStackTrace();
                     }
                 }
@@ -238,8 +247,11 @@ public class MainActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.CAMERA,
                             Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_WRITE_EXT_STORAGE);
-
         }
+        dialog = new ProgressDialog(this);
+        dialog.setTitle("Beginning Scan");
+        dialog.setMessage("Give us a moment...");
+        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         mCamera = getCameraInstance();
         Camera.Parameters parameters = mCamera.getParameters();
         parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
@@ -251,8 +263,7 @@ public class MainActivity extends AppCompatActivity {
         frameLayout.addView(cameraPreviewer);
         frameLayout.setOnClickListener((click) -> {
             mCamera.takePicture(null,null,pictureCallback);
-
-            startService(new Intent(getBaseContext(),VehicleVerification.class));
+            dialog.show();
         });
     }
 
