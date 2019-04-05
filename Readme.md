@@ -16,3 +16,9 @@ The scanned RC is checked whether the scanned RC is valid or not.
 
 ## Dependencies Used:
 1. AWS SDK for Java: Included to link AWS with Android project.
+
+
+Khartik G - karthik54321@gmail.com
+Praveen K B - praveenbhat98@gmail.com
+Vikash Khandelwal -  vikashkhandelwal873@gmail.com
+Saahtih Hegde - saahithhegde@yahoo.co.in
